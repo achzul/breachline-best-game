@@ -1,5 +1,8 @@
 ![Live rank](https://make.fun/badge/best-game-01/achzul/breachline-best-game/rank.svg)
 ![Live reward](https://make.fun/badge/best-game-01/achzul/breachline-best-game/reward.svg)
+![make.fun bounty badge](https://make.fun/badge/best-game-01.svg)
+
+Entry for the make.fun bounty: [Make the best game](https://make.fun/bounty/best-game-01)
 
 # BREACHLINE — Kestrel Yard
 
