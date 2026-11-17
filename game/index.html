@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BREACHLINE — Kestrel Yard</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #0b0f13; overflow: hidden; height: 100%; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  #app { position: fixed; inset: 0; }
+  #app canvas { display: block; }
+  #hud-root { position: fixed; inset: 0; pointer-events: none; color: #e8edf2; z-index: 5; }
+  #hud-root[data-phase="title"] .hud-el { display: none; }
+  .hidden { display: none !important; }
+
+  .minimap { position: absolute; top: 14px; left: 14px; border: 1px solid rgba(255,255,255,.18); border-radius: 6px; background: #10151a; }
+  .topbar { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); text-align: center; }
+  .tb-score { font-size: 30px; font-weight: 800; letter-spacing: 2px; text-shadow: 0 2px 8px rgba(0,0,0,.6); }
+  .tb-info { font-size: 13px; letter-spacing: 2px; opacity: .85; margin-top: 2px; }
+  .money { position: absolute; top: 14px; right: 16px; font-size: 22px; font-weight: 700; color: #ffd166; text-shadow: 0 2px 6px rgba(0,0,0,.6); }
+  .killfeed { position: absolute; top: 56px; right: 16px; text-align: right; font-size: 12.5px; }
+  .kf { margin: 3px 0; background: rgba(8,12,16,.55); padding: 3px 8px; border-radius: 4px; display: inline-block; clear: both; float: right; }
+  .kf.tw { color: #9df5e8; }
+  .kf.tj { color: #ffd2a0; }
+  .plant-alert { position: absolute; top: 96px; left: 50%; transform: translateX(-50%); color: #ff7a6e; font-weight: 700; letter-spacing: 1px; font-size: 15px; animation: pulse 0.9s infinite; text-shadow: 0 2px 6px rgba(0,0,0,.7); }
+
+  .banner { position: absolute; top: 27%; left: 0; right: 0; text-align: center; }
+  .banner-text { font-size: 44px; font-weight: 800; letter-spacing: 3px; text-shadow: 0 3px 14px rgba(0,0,0,.75); }
+  .banner-sub { font-size: 16px; opacity: .9; margin-top: 6px; letter-spacing: 1px; text-shadow: 0 2px 8px rgba(0,0,0,.7); }
+
+  .crosshair { position: absolute; left: 50%; top: 50%; width: 0; height: 0; --sp: 8px; }
+  .crosshair .tick { position: absolute; background: #eafffa; box-shadow: 0 0 3px rgba(0,0,0,.8); }
+  .crosshair .t { left: -1px; top: calc(-1 * var(--sp) - 9px); width: 2px; height: 9px; }
+  .crosshair .b { left: -1px; top: var(--sp); width: 2px; height: 9px; }
+  .crosshair .l { top: -1px; left: calc(-1 * var(--sp) - 9px); width: 9px; height: 2px; }
+  .crosshair .r { top: -1px; left: var(--sp); width: 9px; height: 2px; }
+  .crosshair .dot { left: -1.5px; top: -1.5px; width: 3px; height: 3px; border-radius: 50%; }
+  .hitmarker { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -58%); font-size: 26px; color: #ffd166; text-shadow: 0 0 6px rgba(0,0,0,.8); }
+
+  .channel { position: absolute; bottom: 23%; left: 50%; transform: translateX(-50%); width: 280px; text-align: center; }
+  .channel-label { font-size: 13px; letter-spacing: 2px; margin-bottom: 6px; text-shadow: 0 2px 6px rgba(0,0,0,.8); }
+  .channel-wrap { height: 8px; background: rgba(255,255,255,.15); border-radius: 4px; overflow: hidden; }
+  .channel-fill { height: 100%; width: 0; background: #ffd166; }
+
+  .bottom-left { position: absolute; left: 18px; bottom: 16px; width: 240px; }
+  .bl-name { font-size: 12px; letter-spacing: 2px; opacity: .8; margin-bottom: 2px; }
+  .bar-row { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+  .bar-label { width: 24px; font-size: 11px; opacity: .7; }
+  .bar-wrap { flex: 1; height: 12px; background: rgba(255,255,255,.13); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; width: 100%; }
+  .bar-fill.hp { background: #39d98a; }
+  .bar-fill.hp.low { background: #ff5252; }
+  .bar-fill.ar { background: #57b7ff; width: 0; }
+  .bar-num { width: 32px; font-size: 13px; font-weight: 600; }
+
+  .bottom-right { position: absolute; right: 18px; bottom: 16px; text-align: right; }
+  .weap-name { font-size: 15px; font-weight: 600; opacity: .92; }
+  .ammo { font-size: 34px; font-weight: 800; line-height: 1.1; }
+  .gren-line { font-size: 12.5px; opacity: .88; margin-top: 4px; }
+  .slot-hint { font-size: 11px; opacity: .55; margin-top: 3px; }
+
+  .buy-menu { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); width: 302px; background: rgba(9,14,19,.85); border: 1px solid rgba(255,255,255,.16); border-radius: 8px; padding: 12px 14px; }
+  .buy-title { font-size: 13px; font-weight: 700; letter-spacing: 2px; margin-bottom: 8px; color: #ffd166; }
+  .buy-row { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 4px; font-size: 13.5px; }
+  .buy-key { width: 18px; text-align: center; background: rgba(255,255,255,.14); border-radius: 3px; font-size: 12px; padding: 1px 0; }
+  .buy-label { flex: 1; }
+  .buy-price { color: #ffd166; font-weight: 600; }
+  .buy-row.owned { opacity: .45; }
+  .buy-row.poor { opacity: .65; }
+  .buy-row.poor .buy-price { color: #ff7a6e; }
+  .buy-note { font-size: 11px; opacity: .6; margin-top: 8px; }
+
+  .vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 52%, rgba(205,25,25,.6) 100%); opacity: 0; }
+  .blind { position: absolute; inset: 0; background: #ffffff; opacity: 0; }
+  .scope { position: absolute; inset: 0; background: radial-gradient(circle at center, transparent 29%, rgba(0,0,0,.94) 45%); }
+
+  .title-screen, .end-screen { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(7,11,15,.66); text-align: center; padding: 20px; }
+  .title-kicker { letter-spacing: 4px; color: #7df9ea; font-size: 13px; font-weight: 600; }
+  .title-screen h1 { font-size: 84px; font-weight: 900; letter-spacing: 7px; margin: 10px 0 0; color: #ffffff; text-shadow: 0 6px 30px rgba(53,224,207,.35), 0 3px 10px rgba(0,0,0,.8); }
+  .title-sub { font-size: 17px; opacity: .88; margin: 12px 0 26px; }
+  .title-cols { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; }
+  .title-card { width: 338px; background: rgba(15,21,27,.88); border: 1px solid rgba(255,255,255,.14); border-radius: 10px; padding: 16px 18px; text-align: left; }
+  .title-card h3 { margin: 0 0 8px; letter-spacing: 2px; font-size: 13px; color: #ffd166; }
+  .title-card p { font-size: 13.5px; line-height: 1.55; margin: 0 0 8px; }
+  .title-cta { margin-top: 30px; font-size: 20px; font-weight: 800; letter-spacing: 3px; animation: pulse 1.4s infinite; }
+  .end-title { font-size: 64px; font-weight: 900; letter-spacing: 5px; }
+  .end-title.win { color: #39d98a; }
+  .end-title.lose { color: #ff6b5e; }
+  .end-score { font-size: 20px; margin: 8px 0 20px; letter-spacing: 1px; }
+  .end-table { width: 400px; max-width: 92vw; }
+  .end-row { display: flex; justify-content: space-between; gap: 10px; padding: 6px 12px; background: rgba(15,21,27,.85); margin: 4px 0; border-radius: 6px; font-size: 14px; }
+  .end-row .end-name { flex: 1; text-align: left; }
+  .end-row.tw .end-name { color: #7df9ea; }
+  .end-row.tj .end-name { color: #ffb454; }
+  .end-hint { margin-top: 22px; opacity: .75; font-size: 14px; letter-spacing: 1px; }
+  @keyframes pulse { 50% { opacity: .4; } }
+</style>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.min.js" } }
+</script>
+</head>
+<body>
+<div id="app"></div>
+<div id="hud-root"></div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
